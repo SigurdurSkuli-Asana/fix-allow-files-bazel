@@ -2123,25 +2123,37 @@ public final class RuleContext extends TargetContext
               "'" + prerequisite.getTargetLabel() + "' must produce a single file");
           return;
         }
+        boolean invalidFilesFound = false;
         for (Artifact sourceArtifact : artifacts.toList()) {
-          if (allowedFileTypes.apply(sourceArtifact.getFilename())) {
-            return;
-          }
           if (sourceArtifact.isTreeArtifact()) {
-            return;
+            continue;
+          }
+          // Log out all invalid files to ensure same user experience for both filegroups and file lists.
+          if (!allowedFileTypes.apply(sourceArtifact.getFilename())) {
+            invalidFilesFound = true;
+            attributeError(
+                    attribute.getName(),
+                    "source file '"
+                    + sourceArtifact.getFilename()
+                    + "' is misplaced here (expected "
+                    + allowedFileTypes
+                    + ")");
           }
         }
-        attributeError(
-            attribute.getName(),
-            "'"
-                + prerequisite.getTargetLabel()
-                + "' does not produce any "
-                + getRuleClassNameForLogging()
-                + " "
-                + attribute.getName()
-                + " files (expected "
-                + allowedFileTypes
-                + ")");
+
+        if (invalidFilesFound) {
+          attributeError(
+                  attribute.getName(),
+                  "'"
+                          + prerequisite.getTargetLabel()
+                          + "' does not produce any "
+                          + getRuleClassNameForLogging()
+                          + " "
+                          + attribute.getName()
+                          + " files (expected "
+                          + allowedFileTypes
+                          + ")");
+        }
       }
     }
 
